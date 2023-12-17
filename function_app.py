@@ -18,18 +18,19 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     logging.info('Python Cosmos DB trigger function processed a request.')
     name = None
+    pwd = None
     try:
         req_body = req.get_json()
     except ValueError:
         pass
     else:
         name = req_body.get('name')
-        password = req_body.get('pwd')
+        pwd = req_body.get('pwd')
     if name:
         new_player = {
             "id": name,
             "username": name,
-            "password": password  
+            "password": pwd  
         }
 
         container.create_item(body=new_player)

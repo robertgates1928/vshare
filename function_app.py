@@ -1,6 +1,7 @@
 import azure.functions as func
 from azure.cosmos import CosmosClient, PartitionKey
 import logging
+from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -13,7 +14,7 @@ client = CosmosClient(DB_ENDPOINT, DB_KEY)
 database = client.get_database_client(DB_NAME)
 container = database.get_container_client(CONTAINER_NAME)
 
-@app.route(route="http_trigger")
+@app.route(route="login")
 def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     logging.info('Python Cosmos DB trigger function processed a request.')
@@ -40,3 +41,15 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
                     "Please pass a name on the query string or in the request body",
                     status_code=400
                 )
+
+@app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS)
+def upload(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Python HTTP trigger function processed a request.')
+
+    file = req.files.get('file')
+    logging.info('file name:'+file.filename)
+    blob_service_client = BlobServiceClient.from_connection_string('DefaultEndpointsProtocol=https;AccountName=vsharetest;AccountKey=b4SGnD03D66yiFKDYpJ8ylyLOioocHAiP8EEQSLYo1rO1EATeDcFT3rzLkCuJZk2rowYQi3noi0C+AStGUL/oQ==;EndpointSuffix=core.windows.net')
+    container_client = blob_service_client.get_container_client('vshareblob')
+    blob_client = container_client.get_blob_client(file.filename)
+    blob_client.upload_blob(file)
+    return func.HttpResponse(f"Successfully uploaded {file.filename}!")

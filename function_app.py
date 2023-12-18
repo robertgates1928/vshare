@@ -15,7 +15,7 @@ database = client.get_database_client(DB_NAME)
 container = database.get_container_client(CONTAINER_NAME)
 
 @app.route(route="login")
-def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
+def login(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     logging.info('Python Cosmos DB trigger function processed a request.')
     name = None
@@ -52,4 +52,6 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
     container_client = blob_service_client.get_container_client('vshareblob')
     blob_client = container_client.get_blob_client(file.filename)
     blob_client.upload_blob(file)
-    return func.HttpResponse(f"Successfully uploaded {file.filename}!")
+    url = "https://vsharetest.blob.core.windows.net/vshareblob/"+file.filename    
+    ks = "?st=2023-12-18T07:07:45Z&si=read&spr=https&sv=2022-11-02&sr=c&sig=xvA5P2UfuXbhPgWImvxBUYLJMOoc9xTGMHvhQaY3xDA%3D"
+    return func.HttpResponse(f"<html>Successfully uploaded {file.filename}!<img src='"+url+ks+"' /></html>")

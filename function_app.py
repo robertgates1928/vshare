@@ -17,8 +17,7 @@ container = database.get_container_client('users')
 container_item = database.get_container_client('items')
 @app.route(route="login")
 def login(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
-    logging.info('Python Cosmos DB trigger function processed a request.')
+    logging.info('login function processed a request.')
     name = None
     pwd = None
     
@@ -66,7 +65,7 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS)
 def upload(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info('upload processed a request.')
     name = "test1"
     file = req.files.get('file')
     logging.info('file name:'+file.filename)
@@ -88,22 +87,23 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="list", auth_level=func.AuthLevel.ANONYMOUS)
 def list(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+    logging.info('list processed a request.')
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
+    query = "SELECT * FROM c WHERE c.user_name=@username"
+    items = list(container_item.query_items(
+        query=query,
+        parameters=[{"name":"@username","value":'test1'}],
+        enable_cross_partition_query=True
+    ))
 
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
+    if items:
+        return func.HttpResponse(
+            json.dumps(items),
+            status_code=200
+        )
     else:
         return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
+             "",
              status_code=200
         )
 

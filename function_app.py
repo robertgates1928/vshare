@@ -71,8 +71,14 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('file name:'+file.filename)
     blob_service_client = BlobServiceClient.from_connection_string('DefaultEndpointsProtocol=https;AccountName=vsharetest;AccountKey=b4SGnD03D66yiFKDYpJ8ylyLOioocHAiP8EEQSLYo1rO1EATeDcFT3rzLkCuJZk2rowYQi3noi0C+AStGUL/oQ==;EndpointSuffix=core.windows.net')
     container_client = blob_service_client.get_container_client('vshareblob')
-    blob_client = container_client.get_blob_client(file.filename)
-    blob_client.upload_blob(file)
+    try:
+        blob_client = container_client.get_blob_client(file.filename)
+        blob_client.upload_blob(file)
+    except Exception as e:
+        return func.HttpResponse(
+            json.dumps({"result": False, "msg": "img_name_exist"}),
+            status_code=200
+        )
     new_items = {
         "id": str(uuid.uuid4()),
         "filename": file.filename,
@@ -81,9 +87,13 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
 
     container_item.create_item(body=new_items)
 
-    url = "https://vsharetest.blob.core.windows.net/vshareblob/"+file.filename    
-    ks = "?st=2023-12-18T07:07:45Z&si=read&spr=https&sv=2022-11-02&sr=c&sig=xvA5P2UfuXbhPgWImvxBUYLJMOoc9xTGMHvhQaY3xDA%3D"
-    return func.HttpResponse(f"<html>Successfully uploaded {file.filename}!<img src='"+url+ks+"' /></html>")
+    # url = "https://vsharetest.blob.core.windows.net/vshareblob/"+file.filename    
+    # ks = "?st=2023-12-18T07:07:45Z&si=read&spr=https&sv=2022-11-02&sr=c&sig=xvA5P2UfuXbhPgWImvxBUYLJMOoc9xTGMHvhQaY3xDA%3D"
+    # return func.HttpResponse(f"<html>Successfully uploaded {file.filename}!<img src='"+url+ks+"' /></html>")
+    return func.HttpResponse(
+                json.dumps({"result": True, "msg": "ok"}),
+                status_code=200
+            )
 
 @app.route(route="list", auth_level=func.AuthLevel.ANONYMOUS)
 def list(req: func.HttpRequest) -> func.HttpResponse:

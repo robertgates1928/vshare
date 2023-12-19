@@ -4,8 +4,13 @@ from azure.cosmos import CosmosClient, PartitionKey
 import logging
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 import uuid
+import requests
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.language.questionanswering import QuestionAnsweringClient
+from azure.ai.language.questionanswering import models as qna
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+
 
 DB_ENDPOINT = 'https://vshare.documents.azure.com:443/' 
 DB_KEY = '4D2LAaskmdelMqQ1j6XKgtKRPRvvhIXuFJAHaBPOrxCJW786vU54C4A4ubYuupuWMH0FPQiM4JSSACDbslqQnA=='
@@ -103,23 +108,86 @@ def getimgs(req: func.HttpRequest) -> func.HttpResponse:
              status_code=200
         )
 
-# @app.route(route="qam", auth_level=func.AuthLevel.ANONYMOUS)
-# def qam(req: func.HttpRequest) -> func.HttpResponse:
-#     logging.info('Python HTTP trigger function processed a request.')
+@app.route(route="qam", auth_level=func.AuthLevel.ANONYMOUS)
+def qam(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('qam function processed a request.')
+    qam_endpoint = "https://vshareai.cognitiveservices.azure.com/"
+    qam_credential = AzureKeyCredential("f1bf3bef64184095a4b9e8da304935db")
 
-#     name = req.params.get('name')
-#     if not name:
-#         try:
-#             req_body = req.get_json()
-#         except ValueError:
-#             pass
-#         else:
-#             name = req_body.get('name')
+    question = req.form["qes"]
+    
+    
+    # print(u"Q: {}".format(input.question))
+    # print(u"A: {}".format(best_answer.answer))
+    # print("Confidence Score: {}".format(output.answers[0].confidence))
 
-#     if name:
-#         return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-#     else:
-#         return func.HttpResponse(
-#              "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-#              status_code=200
-#         )
+    if question:
+        client = QuestionAnsweringClient(qam_endpoint, qam_credential)
+        with client:
+            # question="How long does it takes to charge a surface?"
+            input = qna.AnswersFromTextOptions(
+                question=question,
+                text_documents=[
+                    "Power and charging. It takes two to four hours to charge the Surface Pro 4 battery fully from an empty state. " +
+                    "It can take longer if you're using your Surface for power-intensive activities like gaming or video streaming while you're charging it.",
+                    "You can use the USB port on your Surface Pro 4 power supply to charge other devices, like a phone, while your Surface charges. " +
+                    "The USB port on the power supply is only for charging, not for data transfer. If you want to use a USB device, plug it into the USB port on your Surface.",
+                ]
+            )
+            output = client.get_answers_from_text(input)
+
+        best_answer = ''
+        if output.answers:
+            maxconf = 0
+            for a in output.answers:
+                if a.confidence > maxconf:
+                    maxconf = a.confidence
+                    best_answer = a.answer
+
+        trs = getTranslate(best_answer)
+        trs =trs[0]['translations']
+        tmsg = ''
+        for t in trs:
+            tmsg += t['text']+'<br>'
+
+        return func.HttpResponse(
+            json.dumps({"result": True, "msg": tmsg}),
+                status_code=200
+        )
+    else:
+        return func.HttpResponse(
+             json.dumps({"result": False, "msg": 'question_empty'}),
+                status_code=200
+        )
+
+def getTranslate(msgstr):
+    key_var_name = '828426c3ce3542e49982afa6249f7871'
+    subscription_key = key_var_name
+
+    region_var_name = 'eastus'
+    region = region_var_name
+
+    endpoint_var_name = 'https://api.cognitive.microsofttranslator.com/'
+    endpoint = endpoint_var_name
+
+    # If you encounter any issues with the base_url or path, make sure
+    # that you are using the latest endpoint: https://docs.microsoft.com/azure/cognitive-services/translator/reference/v3-0-translate
+    path = '/translate?api-version=3.0'
+    params = '&from=en&to=de&to=it&to=zh-Hans'
+    constructed_url = endpoint + path + params
+
+    headers = {
+        'Ocp-Apim-Subscription-Key': subscription_key,
+        'Ocp-Apim-Subscription-Region': region,
+        'Content-type': 'application/json',
+        'X-ClientTraceId': str(uuid.uuid4())
+    }
+
+    # You can pass more than one object in body.
+    body = [{
+        'text' : msgstr
+    }]
+    request = requests.post(constructed_url, headers=headers, json=body)
+    response = request.json()
+
+    return response

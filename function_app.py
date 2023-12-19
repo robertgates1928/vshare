@@ -25,19 +25,19 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
     pwd = req.form["pwd"]
 
     query = "SELECT * FROM c WHERE c.id=@username"
-    items = list(container_user.query_items(
+    users = list(container_user.query_items(
         query=query,
         parameters=[{"name":"@username","value":name}],
         enable_cross_partition_query=True
     ))
 
-    if not items:
+    if not users:
         return func.HttpResponse(
             json.dumps({"result": False, "msg": "Username or password incorrect"}),
             status_code=200
         )
     
-    user = items[0]
+    user = users[0]
     if user['password'] == pwd:
         return func.HttpResponse(
             json.dumps({"result": True, "msg": "OK"}),
@@ -81,14 +81,14 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200
             )
 
-@app.route(route="list", auth_level=func.AuthLevel.ANONYMOUS)
-def list(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('list processed a request.')
-    query = "SELECT * FROM c order by c.user_name desc"
-    # query = "SELECT * FROM c WHERE c.user_name=@username"
+@app.route(route="getimgs", auth_level=func.AuthLevel.ANONYMOUS)
+def getimgs(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('getimgs processed a request.')
+    # query = "SELECT * FROM c order by c.user_name desc"
+    query = "SELECT * FROM c WHERE c.user_name=@username"
     items = list(container_user.query_items(
         query=query,
-        # parameters=[{"name":"@username","value":'test1'}],
+        parameters=[{"name":"@username","value":'test1'}],
         enable_cross_partition_query=True
     ))
 
@@ -103,23 +103,23 @@ def list(req: func.HttpRequest) -> func.HttpResponse:
              status_code=200
         )
 
-@app.route(route="qam", auth_level=func.AuthLevel.ANONYMOUS)
-def qam(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+# @app.route(route="qam", auth_level=func.AuthLevel.ANONYMOUS)
+# def qam(req: func.HttpRequest) -> func.HttpResponse:
+#     logging.info('Python HTTP trigger function processed a request.')
 
-    name = req.params.get('name')
-    if not name:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            name = req_body.get('name')
+#     name = req.params.get('name')
+#     if not name:
+#         try:
+#             req_body = req.get_json()
+#         except ValueError:
+#             pass
+#         else:
+#             name = req_body.get('name')
 
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+#     if name:
+#         return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
+#     else:
+#         return func.HttpResponse(
+#              "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
+#              status_code=200
+#         )

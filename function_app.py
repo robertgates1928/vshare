@@ -86,7 +86,7 @@ def getimgs(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('getimgs processed a request.')
     # query = "SELECT * FROM c order by c.user_name desc"
     query = "SELECT * FROM c WHERE c.user_name=@username"
-    items = list(container_user.query_items(
+    items = list(container_item.query_items(
         query=query,
         parameters=[{"name":"@username","value":'test1'}],
         enable_cross_partition_query=True

@@ -10,7 +10,6 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 DB_ENDPOINT = 'https://vshare.documents.azure.com:443/' 
 DB_KEY = '4D2LAaskmdelMqQ1j6XKgtKRPRvvhIXuFJAHaBPOrxCJW786vU54C4A4ubYuupuWMH0FPQiM4JSSACDbslqQnA=='
 DB_NAME = 'vshare'
-
 client = CosmosClient(DB_ENDPOINT, DB_KEY)
 database = client.get_database_client(DB_NAME)
 container_user = database.get_container_client('users')
@@ -24,7 +23,7 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
     
     name = req.form["name"]
     pwd = req.form["pwd"]
-    
+
     query = "SELECT * FROM c WHERE c.id=@username"
     items = list(container_user.query_items(
         query=query,
@@ -49,20 +48,6 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
              json.dumps({"result": False, "msg": "Username or password incorrect"}),
              status_code=200
         )
-    # if name:
-    #     new_player = {
-    #         "id": name,
-    #         "username": name,
-    #         "password": pwd  
-    #     }
-
-    #     container.create_item(body=new_player)
-    #     return func.HttpResponse(f"Hello {name}!")
-    # else:
-    #     return func.HttpResponse(
-    #                 "Please pass a name on the query string or in the request body",
-    #                 status_code=400
-    #             )
 
 @app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS)
 def upload(req: func.HttpRequest) -> func.HttpResponse:
@@ -99,11 +84,11 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="list", auth_level=func.AuthLevel.ANONYMOUS)
 def list(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('list processed a request.')
-    # query = "SELECT * FROM c order by c.user_name desc"
-    query = "SELECT * FROM c WHERE c.user_name=@username"
-    items = list(container_item.query_items(
+    query = "SELECT * FROM c order by c.user_name desc"
+    # query = "SELECT * FROM c WHERE c.user_name=@username"
+    items = list(container_user.query_items(
         query=query,
-        parameters=[{"name":"@username","value":'test1'}],
+        # parameters=[{"name":"@username","value":'test1'}],
         enable_cross_partition_query=True
     ))
 

@@ -1,4 +1,5 @@
 import azure.functions as func
+import json
 from azure.cosmos import CosmosClient, PartitionKey
 import logging
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
@@ -20,27 +21,48 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python Cosmos DB trigger function processed a request.')
     name = None
     pwd = None
-    try:
-        req_body = req.get_json()
-    except ValueError:
-        pass
-    else:
-        name = req_body.get('name')
-        pwd = req_body.get('pwd')
-    if name:
-        new_player = {
-            "id": name,
-            "username": name,
-            "password": pwd  
-        }
+    
+    name = req.form["name"]
+    pwd = req.form["pwd"]
 
-        container.create_item(body=new_player)
-        return func.HttpResponse(f"Hello {name}!")
+    query = "SELECT * FROM c WHERE c.id=@username"
+    items = list(container.query_items(
+        query=query,
+        parameters=[{"name":"@username","value":name}],
+        enable_cross_partition_query=True
+    ))
+
+    if not items:
+        return func.HttpResponse(
+            json.dumps({"result": False, "msg": "Username or password incorrect"}),
+            status_code=401
+        )
+    
+    user = items[0]
+    if user['password'] == pwd:
+        return func.HttpResponse(
+            json.dumps({"result": True, "msg": "OK"}),
+            status_code=200
+        )
     else:
         return func.HttpResponse(
-                    "Please pass a name on the query string or in the request body",
-                    status_code=400
-                )
+             json.dumps({"result": False, "msg": "Username or password incorrect"}),
+             status_code=200
+        )
+    # if name:
+    #     new_player = {
+    #         "id": name,
+    #         "username": name,
+    #         "password": pwd  
+    #     }
+
+    #     container.create_item(body=new_player)
+    #     return func.HttpResponse(f"Hello {name}!")
+    # else:
+    #     return func.HttpResponse(
+    #                 "Please pass a name on the query string or in the request body",
+    #                 status_code=400
+    #             )
 
 @app.route(route="upload", auth_level=func.AuthLevel.ANONYMOUS)
 def upload(req: func.HttpRequest) -> func.HttpResponse:

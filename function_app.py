@@ -35,7 +35,7 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
     if not items:
         return func.HttpResponse(
             json.dumps({"result": False, "msg": "Username or password incorrect"}),
-            status_code=401
+            status_code=200
         )
     
     user = items[0]

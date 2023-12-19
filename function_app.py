@@ -10,11 +10,10 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 DB_ENDPOINT = 'https://vshare.documents.azure.com:443/' 
 DB_KEY = '4D2LAaskmdelMqQ1j6XKgtKRPRvvhIXuFJAHaBPOrxCJW786vU54C4A4ubYuupuWMH0FPQiM4JSSACDbslqQnA=='
 DB_NAME = 'vshare'
-CONTAINER_NAME = 'users'
 
 client = CosmosClient(DB_ENDPOINT, DB_KEY)
 database = client.get_database_client(DB_NAME)
-container = database.get_container_client(CONTAINER_NAME)
+container = database.get_container_client('users')
 container_item = database.get_container_client('items')
 @app.route(route="login")
 def login(req: func.HttpRequest) -> func.HttpResponse:

@@ -13,8 +13,9 @@ DB_NAME = 'vshare'
 
 client = CosmosClient(DB_ENDPOINT, DB_KEY)
 database = client.get_database_client(DB_NAME)
-container = database.get_container_client('users')
+container_user = database.get_container_client('users')
 container_item = database.get_container_client('items')
+
 @app.route(route="login")
 def login(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('login function processed a request.')
@@ -23,9 +24,9 @@ def login(req: func.HttpRequest) -> func.HttpResponse:
     
     name = req.form["name"]
     pwd = req.form["pwd"]
-
+    
     query = "SELECT * FROM c WHERE c.id=@username"
-    items = list(container.query_items(
+    items = list(container_user.query_items(
         query=query,
         parameters=[{"name":"@username","value":name}],
         enable_cross_partition_query=True
@@ -84,7 +85,7 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
         "filename": file.filename,
         "user_name": name  
     }
-
+    
     container_item.create_item(body=new_items)
 
     # url = "https://vsharetest.blob.core.windows.net/vshareblob/"+file.filename    
@@ -98,7 +99,7 @@ def upload(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="list", auth_level=func.AuthLevel.ANONYMOUS)
 def list(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('list processed a request.')
-
+    # query = "SELECT * FROM c order by c.user_name desc"
     query = "SELECT * FROM c WHERE c.user_name=@username"
     items = list(container_item.query_items(
         query=query,
